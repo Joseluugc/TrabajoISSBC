@@ -1,0 +1,73 @@
+{
+    "checkboxes": {
+        "titulo": "Síntomas y Signos Observables",
+        "opciones": [
+            "Dolor localizado",
+            "Inflamación",
+            "Hematoma visible",
+            "Crepitación ósea",
+            "Deformidad visible",
+            "Impotencia funcional",
+            "Rigidez articular",
+            "Inestabilidad articular",
+            "Edema periarticular",
+            "Pérdida de sensibilidad"
+        ]
+    },
+    "comboboxes": [
+        {
+            "etiqueta": "Nivel de dolor (EVA)",
+            "opciones": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+        },
+        {
+            "etiqueta": "Zona afectada",
+            "opciones": [
+                "Hombro",
+                "Codo",
+                "Muñeca",
+                "Mano / Dedos",
+                "Cadera",
+                "Rodilla",
+                "Tobillo",
+                "Pie",
+                "Columna cervical",
+                "Columna lumbar",
+                "Costillas"
+            ]
+        },
+        {
+            "etiqueta": "Mecanismo de lesión",
+            "opciones": [
+                "Caída desde altura",
+                "Accidente deportivo",
+                "Accidente de tráfico",
+                "Golpe directo",
+                "Torsión / giro brusco",
+                "Sobrecarga repetitiva",
+                "Desconocido"
+            ]
+        },
+        {
+            "etiqueta": "Tiempo de evolución",
+            "opciones": [
+                "Menos de 24 horas",
+                "1 - 3 días",
+                "4 - 7 días",
+                "1 - 2 semanas",
+                "Más de 2 semanas",
+                "Crónico (> 1 mes)"
+            ]
+        },
+        {
+            "etiqueta": "Antecedentes relevantes",
+            "opciones": [
+                "Ninguno",
+                "Lesión previa en la misma zona",
+                "Osteoporosis",
+                "Artritis / artrosis",
+                "Cirugía previa",
+                "Tratamiento anticoagulante"
+            ]
+        }
+    ]
+}
