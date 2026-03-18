@@ -17,7 +17,18 @@
     "comboboxes": [
         {
             "etiqueta": "Nivel de dolor (EVA)",
-            "opciones": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            "opciones": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10"
+            ]
         },
         {
             "etiqueta": "Zona afectada",
@@ -32,7 +43,8 @@
                 "Pie",
                 "Columna cervical",
                 "Columna lumbar",
-                "Costillas"
+                "Costillas",
+                "Otro"
             ]
         },
         {

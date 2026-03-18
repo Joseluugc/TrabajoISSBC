@@ -5,19 +5,22 @@ Responsabilidades:
   - Leer y exponer la configuración de síntomas desde config_sintomas.json.
   - Mantener el estado de la aplicación: síntomas seleccionados, ruta de
     radiografía, PDFs de conocimiento, hipótesis, diagnóstico y fuentes web.
+  - Extraer texto de los PDFs cargados (para RAG con LLaVa).
   - No contiene lógica de negocio ni referencias a la interfaz gráfica.
 """
 
 import json
 import os
+import base64
 
 
 class Modelo:
     """Modelo central de la aplicación. Almacena todo el estado."""
 
-    # Ruta por defecto del archivo de configuración (junto a este módulo)
+    # Ruta por defecto del archivo de configuración (en la raíz del proyecto)
     _CONFIG_POR_DEFECTO = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "config_sintomas.json"
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "config_sintomas.json",
     )
 
     def __init__(self, ruta_config: str | None = None):
@@ -26,7 +29,7 @@ class Modelo:
 
         Args:
             ruta_config: Ruta al JSON de configuración. Si es None se usa
-                         la ruta por defecto (config_sintomas.json).
+                         la ruta por defecto (config_sintomas.json en raíz).
         """
         self._ruta_config = ruta_config or self._CONFIG_POR_DEFECTO
 
@@ -34,21 +37,21 @@ class Modelo:
         self.config: dict = {}
 
         # --- Estado de la sesión ---
-        self.sintomas_seleccionados: list[str] = []       # checkboxes marcados
-        self.valores_combobox: dict[str, str] = {}         # {etiqueta: valor elegido}
-        self.ruta_radiografia: str | None = None           # ruta del fichero subido
-        self.modo: str = "Solo Local"                      # "Solo Local" o "Web + Local"
+        self.sintomas_seleccionados: list[str] = []
+        self.valores_combobox: dict[str, str] = {}
+        self.ruta_radiografia: str | None = None
+        self.modo: str = "Solo Local"
 
         # --- Resultados (rellenados por el controlador) ---
-        self.hipotesis: list[dict] = []       # [{"nombre": ..., "probabilidad": ...}, ...]
+        self.hipotesis: list[dict] = []
         self.diagnostico: str = ""
         self.confianza: float = 0.0
         self.recomendaciones: str = ""
         self.justificacion: str = ""
 
         # --- Gestión de conocimiento ---
-        self.pdfs: list[dict] = []            # [{"nombre": ..., "ruta": ..., "tamaño": ...}]
-        self.fuentes_web: list[str] = []      # URLs simuladas
+        self.pdfs: list[dict] = []
+        self.fuentes_web: list[str] = []
 
         # Cargar configuración al arrancar
         self.cargar_config()
@@ -83,6 +86,21 @@ class Modelo:
         """Guarda la ruta de la radiografía o prueba subida."""
         self.ruta_radiografia = ruta
 
+    def obtener_imagen_base64(self) -> str | None:
+        """
+        Lee la imagen de radiografía y la devuelve codificada en base64.
+        Necesario para enviar al modelo multimodal LLaVa.
+        Retorna None si no hay imagen o si no se puede leer.
+        """
+        if not self.ruta_radiografia or not os.path.isfile(self.ruta_radiografia):
+            return None
+        try:
+            with open(self.ruta_radiografia, "rb") as f:
+                return base64.b64encode(f.read()).decode("utf-8")
+        except (IOError, OSError) as e:
+            print(f"[ERROR] No se pudo leer la imagen: {e}")
+            return None
+
     # ------------------------------------------------------------------
     # PDFs de conocimiento
     # ------------------------------------------------------------------
@@ -103,6 +121,48 @@ class Modelo:
         """Elimina un PDF de la lista por su índice."""
         if 0 <= indice < len(self.pdfs):
             self.pdfs.pop(indice)
+
+    def extraer_texto_pdfs(self) -> str:
+        """
+        Extrae y concatena el texto de todos los PDFs cargados.
+        Utiliza PyPDF2 para la extracción. Si no está instalado,
+        devuelve un aviso. Esto se usa para inyectar contexto
+        clínico de referencia en el prompt del LLM (RAG local).
+        """
+        if not self.pdfs:
+            return ""
+
+        try:
+            from PyPDF2 import PdfReader
+        except ImportError:
+            return (
+                "[AVISO] PyPDF2 no está instalado. "
+                "Instálelo con: pip install PyPDF2 para habilitar "
+                "la extracción de texto de PDFs."
+            )
+
+        textos = []
+        for pdf_info in self.pdfs:
+            ruta = pdf_info.get("ruta", "")
+            if not os.path.isfile(ruta):
+                textos.append(f"[No se encontró el archivo: {ruta}]")
+                continue
+            try:
+                reader = PdfReader(ruta)
+                contenido = []
+                for pagina in reader.pages:
+                    texto_pagina = pagina.extract_text()
+                    if texto_pagina:
+                        contenido.append(texto_pagina)
+                if contenido:
+                    textos.append(
+                        f"--- Documento: {pdf_info.get('nombre', 'Desconocido')} ---\n"
+                        + "\n".join(contenido)
+                    )
+            except Exception as e:
+                textos.append(f"[Error leyendo {pdf_info.get('nombre', '')}: {e}]")
+
+        return "\n\n".join(textos)
 
     # ------------------------------------------------------------------
     # Helpers

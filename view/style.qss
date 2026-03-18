@@ -1,0 +1,386 @@
+/* =================================================================
+   style.qss – Hoja de Estilos Qt para la App de Diagnóstico
+   Tema: Clínico / Médico – Azules suaves, blancos, grises claros
+   ================================================================= */
+
+/* --- Ventana principal y fondo global --- */
+QMainWindow, QDialog {
+    background-color: #F0F4F8;
+    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+    font-size: 13px;
+    color: #2D3748;
+}
+
+/* --- Scroll Area --- */
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+QScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+/* --- Título principal (QLabel con objectName "titulo_app") --- */
+QLabel#titulo_app {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1A365D;
+    padding: 16px 8px 8px 8px;
+    background-color: transparent;
+}
+
+QLabel#subtitulo_app {
+    font-size: 13px;
+    color: #718096;
+    padding: 0px 8px 12px 8px;
+    background-color: transparent;
+}
+
+/* --- Group Boxes --- */
+QGroupBox {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    margin-top: 18px;
+    padding: 20px 16px 16px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #2B6CB0;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 4px 14px;
+    background-color: #EBF4FF;
+    border: 1px solid #BEE3F8;
+    border-radius: 8px;
+    color: #2B6CB0;
+    font-size: 13px;
+    font-weight: bold;
+    left: 12px;
+}
+
+/* --- Checkboxes --- */
+QCheckBox {
+    spacing: 8px;
+    font-weight: normal;
+    color: #4A5568;
+    padding: 6px 4px;
+    font-size: 12px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #CBD5E0;
+    border-radius: 5px;
+    background-color: #FFFFFF;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #63B3ED;
+    background-color: #EBF8FF;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #3182CE;
+    border-color: #2B6CB0;
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: #2C5282;
+}
+
+/* --- ComboBox --- */
+QComboBox {
+    border: 2px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 7px 12px;
+    background-color: #FFFFFF;
+    color: #2D3748;
+    font-size: 12px;
+    min-height: 20px;
+}
+
+QComboBox:hover {
+    border-color: #90CDF4;
+}
+
+QComboBox:focus {
+    border-color: #3182CE;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 28px;
+    border: none;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 2px solid #E2E8F0;
+    border-radius: 8px;
+    selection-background-color: #EBF4FF;
+    selection-color: #2B6CB0;
+    padding: 4px;
+    outline: none;
+}
+
+/* --- Labels genéricos --- */
+QLabel {
+    color: #4A5568;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+/* --- Botones principales --- */
+QPushButton {
+    background-color: #3182CE;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: bold;
+    min-height: 22px;
+}
+
+QPushButton:hover {
+    background-color: #2B6CB0;
+}
+
+QPushButton:pressed {
+    background-color: #1A365D;
+}
+
+QPushButton:disabled {
+    background-color: #A0AEC0;
+    color: #E2E8F0;
+}
+
+/* --- Botón de subir radiografía (acento verde) --- */
+QPushButton#btn_subir {
+    background-color: #38A169;
+}
+
+QPushButton#btn_subir:hover {
+    background-color: #2F855A;
+}
+
+QPushButton#btn_subir:pressed {
+    background-color: #276749;
+}
+
+/* --- Botón evaluar (acento azul intenso) --- */
+QPushButton#btn_evaluar {
+    background-color: #2B6CB0;
+}
+
+QPushButton#btn_evaluar:hover {
+    background-color: #2C5282;
+}
+
+/* --- Botón diagnosticar (acento teal) --- */
+QPushButton#btn_diagnosticar {
+    background-color: #319795;
+}
+
+QPushButton#btn_diagnosticar:hover {
+    background-color: #2C7A7B;
+}
+
+QPushButton#btn_diagnosticar:pressed {
+    background-color: #234E52;
+}
+
+/* --- Botón justificación (acento naranja) --- */
+QPushButton#btn_justificacion {
+    background-color: #DD6B20;
+}
+
+QPushButton#btn_justificacion:hover {
+    background-color: #C05621;
+}
+
+/* --- Botón PDFs (acento púrpura) --- */
+QPushButton#btn_pdfs {
+    background-color: #805AD5;
+}
+
+QPushButton#btn_pdfs:hover {
+    background-color: #6B46C1;
+}
+
+/* --- Botón fuentes web (acento gris azulado) --- */
+QPushButton#btn_fuentes {
+    background-color: #4A5568;
+}
+
+QPushButton#btn_fuentes:hover {
+    background-color: #2D3748;
+}
+
+/* --- Botón cerrar en diálogos --- */
+QPushButton#btn_cerrar {
+    background-color: #A0AEC0;
+    color: #2D3748;
+    min-width: 100px;
+}
+
+QPushButton#btn_cerrar:hover {
+    background-color: #718096;
+    color: #FFFFFF;
+}
+
+/* --- Botón agregar PDF (verde) --- */
+QPushButton#btn_agregar_pdf {
+    background-color: #38A169;
+}
+
+QPushButton#btn_agregar_pdf:hover {
+    background-color: #2F855A;
+}
+
+/* --- Botón eliminar PDF (rojo) --- */
+QPushButton#btn_eliminar_pdf {
+    background-color: #E53E3E;
+}
+
+QPushButton#btn_eliminar_pdf:hover {
+    background-color: #C53030;
+}
+
+/* --- Radio Buttons --- */
+QRadioButton {
+    spacing: 8px;
+    color: #4A5568;
+    font-size: 12px;
+    padding: 6px 4px;
+}
+
+QRadioButton::indicator {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #CBD5E0;
+    border-radius: 10px;
+    background-color: #FFFFFF;
+}
+
+QRadioButton::indicator:hover {
+    border-color: #63B3ED;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #3182CE;
+    border-color: #2B6CB0;
+}
+
+/* --- Tablas --- */
+QTableWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    gridline-color: #EDF2F7;
+    font-size: 12px;
+    selection-background-color: #EBF4FF;
+    selection-color: #2B6CB0;
+}
+
+QTableWidget::item {
+    padding: 8px;
+    border-bottom: 1px solid #EDF2F7;
+}
+
+QHeaderView::section {
+    background-color: #EBF4FF;
+    color: #2B6CB0;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 10px 8px;
+    border: none;
+    border-bottom: 2px solid #BEE3F8;
+}
+
+/* --- Text Edit (justificación, resultados) --- */
+QTextEdit {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    color: #2D3748;
+    selection-background-color: #BEE3F8;
+}
+
+QTextEdit[readOnly="true"] {
+    background-color: #F7FAFC;
+}
+
+/* --- ListWidget (fuentes web) --- */
+QListWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 12px;
+    color: #2D3748;
+}
+
+QListWidget::item {
+    padding: 8px 6px;
+    border-bottom: 1px solid #EDF2F7;
+}
+
+QListWidget::item:selected {
+    background-color: #EBF4FF;
+    color: #2B6CB0;
+}
+
+/* --- QProgressDialog / Progress Bar --- */
+QProgressDialog {
+    background-color: #F0F4F8;
+    font-size: 13px;
+}
+
+QProgressBar {
+    background-color: #EDF2F7;
+    border: none;
+    border-radius: 6px;
+    height: 10px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #3182CE;
+    border-radius: 6px;
+}
+
+/* --- Tooltips --- */
+QToolTip {
+    background-color: #2D3748;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+/* --- Imagen preview label --- */
+QLabel#lbl_preview {
+    background-color: #EDF2F7;
+    border: 2px dashed #CBD5E0;
+    border-radius: 12px;
+    padding: 8px;
+    min-height: 120px;
+    min-width: 120px;
+}
+
+QLabel#lbl_ruta_radiografia {
+    color: #718096;
+    font-size: 11px;
+    font-style: italic;
+    padding: 4px;
+}
