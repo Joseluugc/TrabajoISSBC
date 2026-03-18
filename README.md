@@ -27,7 +27,7 @@ Para ello, el sistema recopila:
 
 El sistema realiza una integración real con el modelo multimodal LLaVA (ejecutado localmente mediante Ollama).
 
-Gracias a sus capacidades de visión-lenguaje, el modelo puede:
+El modelo es capaz de:
 
 * Analizar imágenes médicas (como radiografías)
 * Interpretar síntomas textuales
@@ -35,92 +35,133 @@ Gracias a sus capacidades de visión-lenguaje, el modelo puede:
 
 ---
 
-## 2. Instrucciones de ejecución
+## 2. Ejecución rápida
 
-### Requisitos previos
-
-* Python 3.10 o superior
-* Ollama instalado
-
-### Instalación
-
-1. Descargar el modelo multimodal:
+Siga estos pasos exactamente para ejecutar el proyecto sin errores:
 
 ```bash
+git clone https://github.com/Joseluugc/TrabajoISSBC.git
+cd TrabajoISSBC
+pip install -r requirements.txt
 ollama pull llava
-```
-
-2. Clonar o descargar el repositorio:
-
-```bash
-git clone <URL_DEL_REPOSITORIO>
-cd <NOMBRE_DEL_PROYECTO>
-```
-
-3. Instalar dependencias:
-
-```bash
-pip install PyQt6 requests duckduckgo-search
-```
-
-4. Asegurarse de que Ollama está en ejecución y lanzar la aplicación:
-
-```bash
 python main.py
 ```
 
 ---
 
-## 3. Arquitectura MVC
+## 3. Requisitos
+
+* Python 3.10 o superior
+* Ollama instalado
+
+### Probado con
+
+* Python 3.10
+* Python 3.11
+
+---
+
+## 4. Dependencias
+
+El proyecto incluye un archivo `requirements.txt` con todas las dependencias necesarias:
+
+```txt
+PyQt6
+requests
+duckduckgo-search
+```
+
+Instalación:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 5. Configuración de Ollama (IMPORTANTE)
+
+Este proyecto depende de Ollama para ejecutar el modelo LLaVA.
+
+Asegúrese de:
+
+1. Tener Ollama instalado
+2. Tener el modelo descargado:
+
+```bash
+ollama pull llava
+```
+
+3. Tener Ollama ejecutándose en segundo plano:
+
+```bash
+ollama serve
+```
+
+Si Ollama no está activo, el sistema de diagnóstico no funcionará.
+
+---
+
+## 6. Arquitectura MVC
 
 El proyecto sigue una arquitectura Modelo-Vista-Controlador (MVC) estricta, aplicando principios SOLID y separación de responsabilidades.
 
 ### Modelo (`/model/`)
 
-Gestiona el estado y la lógica de datos. No depende de la interfaz gráfica.
+Gestiona el estado y la lógica de datos.
 
 * `model.py` → Estado central del sistema
-* `config_loader.py` → Carga y estructura de `config_sintomas.json`
-* `pdf_manager.py` → Gestión de documentos PDF locales
+* `config_loader.py` → Carga de configuración JSON
+* `pdf_manager.py` → Gestión de documentos PDF
 
 ---
 
 ### Vista (`/view/`)
 
-Encargada de la interfaz gráfica. Totalmente desacoplada de la lógica.
+Encargada de la interfaz gráfica.
 
 * `main_window.py` → Construcción dinámica basada en JSON
-* `/dialogs/` → Ventanas secundarias modulares:
-
-  * `diagnosis_dialog.py`
-  * `hypothesis_dialog.py`
-  * `web_sources_dialog.py`
-* `style.qss` → Estilo visual clínico moderno
+* `/dialogs/` → Ventanas secundarias
+* `style.qss` → Estilos visuales
 
 ---
 
 ### Controlador (`/controller/`)
 
-Actúa como intermediario entre la Vista y el Modelo.
+Coordina la lógica entre modelo y vista.
 
 * `controller.py` → Orquestador principal
-* `llm_worker.py` → Ejecución asíncrona del LLM con QThread (evita bloqueos en la UI)
-* `prompt_builder.py` → Generación de prompts estructurados
-* `web_search.py` → Integración con búsqueda web (DuckDuckGo)
+* `llm_worker.py` → Ejecución asíncrona del modelo
+* `prompt_builder.py` → Construcción de prompts
+* `web_search.py` → Búsqueda web con DuckDuckGo
 
 ---
 
-## 4. Modo Local vs Web
+## 7. Estructura del proyecto
 
-El sistema permite seleccionar el contexto de inferencia mediante la sección "Modo de Consulta" en la interfaz.
+```bash
+TrabajoISSBC/
+│
+├── main.py
+├── requirements.txt
+├── config_sintomas.json
+│
+├── model/
+├── view/
+├── controller/
+```
+
+---
+
+## 8. Modo de funcionamiento
 
 ### Modo "Solo Local"
 
-* Usa exclusivamente documentos cargados por el usuario
+* Usa únicamente documentos cargados por el usuario
 * No realiza consultas externas
-* Garantiza privacidad total
+* Garantiza privacidad
 
-En la interfaz:
+La interfaz muestra:
 "No se consultaron fuentes web – Modo solo local"
 
 ---
@@ -128,27 +169,47 @@ En la interfaz:
 ### Modo "Web + Local"
 
 * Combina conocimiento local con información de internet
-* Realiza búsquedas en tiempo real mediante DuckDuckGo
-* Mejora la calidad y actualidad del diagnóstico
+* Realiza búsquedas en tiempo real
+* Mejora la calidad del diagnóstico
 
-En la interfaz:
+La interfaz muestra:
 
-* Se muestra una lista de fuentes reales consultadas
-* URLs accesibles desde la ventana "Fuentes Web"
-
----
-
-## Características destacadas
-
-* Integración real con IA multimodal (LLaVA)
-* Arquitectura profesional MVC
-* Interfaz dinámica basada en JSON
-* Ejecución asíncrona (UI siempre fluida)
-* Soporte para imágenes médicas
-* Modo offline (privado) y online (enriquecido)
+* Lista de fuentes web consultadas
+* URLs accesibles desde la ventana correspondiente
 
 ---
 
-## Licencia
+## 9. Problemas comunes
 
-Este proyecto ha sido desarrollado con fines académicos.
+**Error: no responde el modelo**
+
+* Ejecutar: `ollama pull llava`
+
+**Error de conexión con Ollama**
+
+* Asegurarse de que está ejecutándose: `ollama serve`
+
+**Error de módulos faltantes**
+
+* Ejecutar: `pip install -r requirements.txt`
+
+---
+
+## 10. Notas
+
+* La aplicación está diseñada con fines académicos
+* El diagnóstico generado es orientativo y no sustituye a un profesional médico
+
+---
+
+## 11. Participantes
+
+* José Luis García Corbacho
+* Javier Jesus Costa Ruiz-Canela
+* Marcos Hidalgo Moreno
+
+---
+
+## 12. Licencia
+
+Proyecto desarrollado con fines educativos.
