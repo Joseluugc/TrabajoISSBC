@@ -10,9 +10,9 @@ import os
 
 from PyQt6.QtWidgets import QApplication
 
-from model.model import Modelo
-from view.view import VentanaPrincipal
-from controller.controller import Controlador
+from model import Modelo
+from view import VentanaPrincipal
+from controller import Controlador
 
 
 def cargar_estilos(app: QApplication) -> None:
