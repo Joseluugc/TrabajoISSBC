@@ -32,8 +32,12 @@ class Modelo:
         self.recomendaciones: str = ""
         self.justificacion: str = ""
 
-        # --- Fuentes web ---
+        # --- Descripción de imagen (rellenada por LLaVA) ---
+        self.descripcion_imagen: str = ""
+
+        # --- Fuentes web (caché de búsqueda) ---
         self.fuentes_web: list[str] = []
+        self.contexto_web: str = ""
 
     # ------------------------------------------------------------------
     # Delegación → ConfigLoader

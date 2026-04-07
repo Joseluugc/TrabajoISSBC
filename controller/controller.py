@@ -5,8 +5,9 @@ Responsabilidad única: actuar como "pegamento" entre la Vista y el Modelo.
   - Conecta las señales de la UI con acciones.
   - Recoge datos de la Vista → actualiza el Modelo.
   - Delega la construcción de prompts a prompt_builder.
-  - Delega la búsqueda web a web_search.
+  - Delega la búsqueda web a web_search (vía WebSearchWorker).
   - Delega la inferencia asíncrona al LLMWorker (QThread).
+  - Valida la imagen subida con ImageValidatorWorker (LLaVA).
   - Abre los diálogos correspondientes con los resultados.
 
 NO contiene lógica de formateo de prompts, búsqueda web ni inferencia.
@@ -14,7 +15,7 @@ NO contiene lógica de formateo de prompts, búsqueda web ni inferencia.
 
 import os
 
-from PyQt6.QtWidgets import QFileDialog
+from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from model.model import Modelo
 from view.main_window import VentanaPrincipal
@@ -26,8 +27,9 @@ from view.dialogs import (
     DialogoResultadoLLM,
 )
 from controller.llm_worker import LLMWorker
+from controller.web_search_worker import WebSearchWorker
+from controller.image_validator_worker import ImageValidatorWorker
 from controller.prompt_builder import construir_prompt
-from controller.web_search import buscar_web
 
 
 class Controlador:
@@ -37,6 +39,8 @@ class Controlador:
         self.modelo = modelo
         self.vista = vista
         self._worker: LLMWorker | None = None
+        self._web_worker: WebSearchWorker | None = None
+        self._img_validator: ImageValidatorWorker | None = None
         self._accion_pendiente: str = ""
         self._conectar_senales()
 
@@ -57,12 +61,59 @@ class Controlador:
     # ------------------------------------------------------------------
     def _recoger_datos_vista(self):
         """Lee los valores actuales de la vista y los almacena en el modelo."""
-        self.modelo.sintomas_seleccionados = self.vista.obtener_sintomas_marcados()
-        self.modelo.valores_combobox = self.vista.obtener_valores_combobox()
-        self.modelo.modo = self.vista.obtener_modo()
+        nuevos_sintomas = self.vista.obtener_sintomas_marcados()
+        nuevos_valores = self.vista.obtener_valores_combobox()
+        nuevo_modo = self.vista.obtener_modo()
+
+        # Invalidar caché web si cambiaron los datos de entrada
+        if (nuevos_sintomas != self.modelo.sintomas_seleccionados
+                or nuevos_valores != self.modelo.valores_combobox
+                or nuevo_modo != self.modelo.modo):
+            self.modelo.contexto_web = ""
+            self.modelo.fuentes_web = []
+
+        self.modelo.sintomas_seleccionados = nuevos_sintomas
+        self.modelo.valores_combobox = nuevos_valores
+        self.modelo.modo = nuevo_modo
 
     # ------------------------------------------------------------------
-    # Slot: Subir radiografía
+    # Validación de PDFs según modo
+    # ------------------------------------------------------------------
+    def _validar_pdfs_modo(self) -> bool:
+        """
+        Valida que haya PDFs según el modo seleccionado.
+
+        Returns:
+            True si se puede continuar, False si se debe abortar.
+        """
+        tiene_pdfs = len(self.modelo.pdfs) > 0
+
+        if self.modelo.modo == "Solo Local" and not tiene_pdfs:
+            self.vista.mostrar_error(
+                "Sin base de conocimiento",
+                "En modo 'Solo Local' es necesario tener al menos un PDF "
+                "en la base de conocimiento.\n\n"
+                "Use el botón '📚 Gestión Conocimiento (PDFs)' para añadir "
+                "documentos clínicos de referencia.",
+            )
+            return False
+
+        if self.modelo.modo == "Web + Local" and not tiene_pdfs:
+            QMessageBox.warning(
+                self.vista,
+                "Sin PDFs locales",
+                "No hay PDFs en la base de conocimiento local.\n\n"
+                "El análisis se realizará únicamente con información "
+                "de búsqueda web, sin contexto clínico local.\n\n"
+                "Puede añadir PDFs desde '📚 Gestión Conocimiento (PDFs)' "
+                "para mejorar la calidad del diagnóstico.",
+            )
+            # No bloquea: permite continuar solo con web
+
+        return True
+
+    # ------------------------------------------------------------------
+    # Slot: Subir radiografía (con validación LLaVA)
     # ------------------------------------------------------------------
     def _subir_radiografia(self):
         """Abre un diálogo para seleccionar una imagen de radiografía."""
@@ -74,8 +125,63 @@ class Controlador:
         )
         if ruta:
             self.modelo.establecer_radiografia(ruta)
+            # Invalidar caché web (nueva imagen = nuevo contexto)
+            self.modelo.contexto_web = ""
+            self.modelo.fuentes_web = []
+            self.modelo.descripcion_imagen = ""
             self.vista.mostrar_ruta_radiografia(os.path.basename(ruta))
             self.vista.mostrar_preview_imagen(ruta)
+            # Lanzar validación de dominio con LLaVA
+            self._validar_imagen_dominio()
+
+    def _validar_imagen_dominio(self):
+        """Lanza un worker para validar si la imagen es de traumatología."""
+        imagen_b64 = self.modelo.obtener_imagen_base64()
+        if not imagen_b64:
+            return
+
+        # Si ya hay un validador en ejecución, no lanzar otro
+        if self._img_validator and self._img_validator.isRunning():
+            return
+
+        self._img_validator = ImageValidatorWorker(imagen_b64)
+        self._img_validator.validacion_lista.connect(self._procesar_validacion_imagen)
+        self._img_validator.error_ocurrido.connect(self._error_validacion_imagen)
+        self._img_validator.finished.connect(self._validacion_imagen_finalizada)
+
+        self.vista.mostrar_progreso(
+            "🔍 Verificando que la imagen sea de dominio traumatológico...\n"
+            "Esto puede tardar unos segundos."
+        )
+        self._img_validator.start()
+
+    def _procesar_validacion_imagen(self, es_medica: bool, razon: str, descripcion: str):
+        """Procesa el resultado de la validación de imagen."""
+        self.vista.ocultar_progreso()
+        # Guardar la descripción de la imagen para búsquedas web
+        self.modelo.descripcion_imagen = descripcion
+        if not es_medica:
+            QMessageBox.warning(
+                self.vista,
+                "⚠️ Imagen no relacionada con traumatología",
+                f"La imagen subida no parece ser una imagen médica "
+                f"de traumatología.\n\n"
+                f"Motivo: {razon}\n\n"
+                f"El sistema está diseñado para analizar radiografías, "
+                f"TACs, resonancias y otras pruebas traumatológicas.\n\n"
+                f"Puede continuar, pero los resultados podrían no ser "
+                f"fiables.",
+            )
+
+    def _error_validacion_imagen(self, mensaje: str):
+        """Maneja errores en la validación de imagen."""
+        self.vista.ocultar_progreso()
+        # No bloquear: si falla la validación, el usuario puede continuar
+        print(f"[WARN] Validación de imagen: {mensaje}")
+
+    def _validacion_imagen_finalizada(self):
+        """Limpia la referencia al worker de validación."""
+        self._img_validator = None
 
     # ------------------------------------------------------------------
     # Slot: Evaluar hipótesis
@@ -89,8 +195,10 @@ class Controlador:
                 "Debe seleccionar al menos un síntoma antes de evaluar hipótesis.",
             )
             return
+        if not self._validar_pdfs_modo():
+            return
         self._accion_pendiente = "evaluar"
-        self._lanzar_worker("evaluar")
+        self._iniciar_analisis("evaluar")
 
     # ------------------------------------------------------------------
     # Slot: Diagnosticar
@@ -104,14 +212,16 @@ class Controlador:
                 "Debe seleccionar al menos un síntoma antes de diagnosticar.",
             )
             return
+        if not self._validar_pdfs_modo():
+            return
         self._accion_pendiente = "diagnosticar"
-        self._lanzar_worker("completo")
+        self._iniciar_analisis("completo")
 
     # ------------------------------------------------------------------
-    # Lanzar el worker de inferencia
+    # Flujo de análisis: web search → LLM
     # ------------------------------------------------------------------
-    def _lanzar_worker(self, tipo_analisis: str):
-        """Crea y lanza un LLMWorker en un QThread separado."""
+    def _iniciar_analisis(self, tipo_analisis: str):
+        """Inicia el flujo de análisis: búsqueda web (si aplica) → LLM."""
         if self._worker and self._worker.isRunning():
             self.vista.mostrar_error(
                 "Proceso en curso",
@@ -119,17 +229,67 @@ class Controlador:
             )
             return
 
-        # Obtener contexto web si corresponde
-        contexto_web = ""
-        if self.modelo.modo == "Web + Local":
-            contexto_web, fuentes = buscar_web(
-                self.modelo.sintomas_seleccionados,
-                self.modelo.valores_combobox,
-            )
-            self.modelo.fuentes_web = fuentes
-        else:
-            self.modelo.fuentes_web = []
+        self._tipo_analisis_pendiente = tipo_analisis
 
+        if self.modelo.modo == "Web + Local":
+            # Reutilizar caché si ya hay resultados web previos
+            if self.modelo.contexto_web and self.modelo.fuentes_web:
+                self._lanzar_worker_llm(contexto_web=self.modelo.contexto_web)
+            else:
+                # Paso 1: búsqueda web asíncrona con barra de progreso
+                self._lanzar_busqueda_web()
+        else:
+            # Sin búsqueda web: ir directo al LLM
+            self.modelo.fuentes_web = []
+            self.modelo.contexto_web = ""
+            self._lanzar_worker_llm(contexto_web="")
+
+    def _lanzar_busqueda_web(self):
+        """Lanza el WebSearchWorker con barra de progreso."""
+        if self._web_worker and self._web_worker.isRunning():
+            return
+
+        self._web_worker = WebSearchWorker(
+            sintomas=self.modelo.sintomas_seleccionados,
+            valores=self.modelo.valores_combobox,
+            descripcion_imagen=self.modelo.descripcion_imagen,
+        )
+        self._web_worker.resultado_listo.connect(self._busqueda_web_completada)
+        self._web_worker.error_ocurrido.connect(self._error_busqueda_web)
+        self._web_worker.finished.connect(self._busqueda_web_finalizada)
+
+        self.vista.deshabilitar_botones(True)
+        self.vista.mostrar_progreso(
+            "🌐 Buscando información médica en la web...\n"
+            "Consultando fuentes clínicas actualizadas."
+        )
+        self._web_worker.start()
+
+    def _busqueda_web_completada(self, contexto_web: str, fuentes: list):
+        """Callback cuando la búsqueda web termina con éxito."""
+        self.vista.ocultar_progreso()
+        # Cachear resultados para reutilizarlos en análisis sucesivos
+        self.modelo.fuentes_web = fuentes
+        self.modelo.contexto_web = contexto_web
+        # Paso 2: lanzar el LLM con el contexto web obtenido
+        self._lanzar_worker_llm(contexto_web=contexto_web)
+
+    def _error_busqueda_web(self, mensaje: str):
+        """Callback si la búsqueda web falla."""
+        self.vista.ocultar_progreso()
+        self.modelo.fuentes_web = [mensaje]
+        # Continuar sin contexto web
+        self._lanzar_worker_llm(contexto_web="")
+
+    def _busqueda_web_finalizada(self):
+        """Limpia la referencia al worker de búsqueda web."""
+        self._web_worker = None
+
+    # ------------------------------------------------------------------
+    # Lanzar el worker de inferencia LLM
+    # ------------------------------------------------------------------
+    def _lanzar_worker_llm(self, contexto_web: str):
+        """Crea y lanza un LLMWorker en un QThread separado."""
         # Construir prompt (delegado a prompt_builder)
         prompt = construir_prompt(
             sintomas=self.modelo.sintomas_seleccionados,
@@ -137,7 +297,7 @@ class Controlador:
             ruta_radiografia=self.modelo.ruta_radiografia,
             texto_pdfs=self.modelo.extraer_texto_pdfs(),
             contexto_web=contexto_web,
-            tipo_analisis=tipo_analisis,
+            tipo_analisis=self._tipo_analisis_pendiente,
         )
 
         # Crear y conectar el worker
@@ -157,7 +317,7 @@ class Controlador:
         self._worker.start()
 
     # ------------------------------------------------------------------
-    # Callbacks del worker
+    # Callbacks del worker LLM
     # ------------------------------------------------------------------
     def _procesar_resultado(self, resultado: dict):
         """Procesa el resultado del LLM y abre el diálogo correspondiente."""
