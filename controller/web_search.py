@@ -17,8 +17,14 @@ def buscar_web(
     """
     Busca información médica reciente en la web usando DuckDuckGo.
 
+    Construye una query enriquecida que incorpora:
+    - Zona corporal (de LLaVA o del combobox «Zona afectada»).
+    - Signos y síntomas observables (checkboxes marcados).
+    - Parámetros clínicos relevantes: mecanismo de lesión, nivel de dolor
+      y tiempo de evolución.
+
     Args:
-        sintomas: Lista de síntomas del paciente.
+        sintomas: Lista de síntomas / signos observables del paciente.
         valores: Dict de parámetros clínicos {etiqueta: valor}.
         descripcion_imagen: Descripción de la imagen obtenida por LLaVA
                             (zona corporal + hallazgos). Si está disponible,
@@ -29,16 +35,41 @@ def buscar_web(
         - texto_contexto: string con los resultados para inyectar en el prompt.
         - lista_fuentes: lista de URLs/títulos para mostrar al usuario.
     """
+    # --- Zona corporal --------------------------------------------------
     # Priorizar la descripción de LLaVA sobre el combobox genérico
     if descripcion_imagen:
         contexto_zona = descripcion_imagen
     else:
         contexto_zona = valores.get("Zona afectada", "extremidad")
 
-    query = (
-        f"traumatología {contexto_zona} {' '.join(sintomas[:3])} "
-        f"diagnóstico tratamiento"
-    )
+    # --- Signos y síntomas observables (todos los marcados) -------------
+    signos_str = " ".join(sintomas) if sintomas else ""
+
+    # --- Parámetros clínicos relevantes (todos los seleccionados) -------
+    # Valores neutros que no aportan información a la búsqueda
+    _NEUTROS = {"ninguno", "desconocido"}
+
+    partes_clinicas: list[str] = []
+    for etiqueta, valor in valores.items():
+        if etiqueta == "Zona afectada":
+            continue  # ya está en contexto_zona
+        if valor and valor.lower() not in _NEUTROS:
+            if etiqueta == "Nivel de dolor (EVA)":
+                partes_clinicas.append(f"dolor EVA {valor}")
+            else:
+                partes_clinicas.append(valor)
+
+    clinica_str = " ".join(partes_clinicas)
+
+    # --- Query final ----------------------------------------------------
+    query_parts = ["traumatología", contexto_zona]
+    if signos_str:
+        query_parts.append(signos_str)
+    if clinica_str:
+        query_parts.append(clinica_str)
+    query_parts.append("diagnóstico tratamiento")
+
+    query = " ".join(query_parts)
 
     try:
         return _buscar_duckduckgo(query)
