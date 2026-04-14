@@ -31,19 +31,40 @@ class ImageValidatorWorker(QThread):
     MODELO = "llava"
 
     PROMPT_VALIDACION = (
-        "Analiza esta imagen y determina:\n"
-        "1. Si es una imagen médica relacionada con traumatología "
-        "(radiografía, TAC, resonancia magnética, ecografía "
-        "musculoesquelética, fotografía clínica de lesión, etc.).\n"
-        "2. Qué zona corporal muestra (ej: rodilla, tobillo, muñeca, "
-        "hombro, columna, cadera, codo, mano, pie, cráneo, nariz, etc.).\n"
-        "3. Qué hallazgos o lesiones son visibles.\n\n"
-        "Responde EXCLUSIVAMENTE con JSON:\n"
+        "Eres un radiólogo especializado en traumatología. Analiza la imagen proporcionada.\n\n"
+        "1. Determina si la imagen corresponde al dominio médico-traumatológico "
+        "(radiografía, TAC, RM, ecografía musculoesquelética o fotografía clínica de lesión).\n"
+        "2. Identifica la zona anatómica exacta entre las siguientes opciones:\n"
+        "   - Cráneo / Cara\n"
+        "   - Columna cervical\n"
+        "   - Columna dorsolumbar\n"
+        "   - Hombro (incluyendo clavícula y escápula)\n"
+        "   - Brazo / Húmero\n"
+        "   - Codo\n"
+        "   - Antebrazo (cúbito/radio)\n"
+        "   - Muñeca / Carpo\n"
+        "   - Mano / Dedos (metacarpianos, falanges)\n"
+        "   - Cadera / Pelvis\n"
+        "   - Muslo / Fémur\n"
+        "   - Rodilla\n"
+        "   - Pierna (tibia/peroné)\n"
+        "   - Tobillo\n"
+        "   - Pie / Dedos del pie\n"
+        "   - Otro (especificar)\n\n"
+        "3. Describe brevemente los hallazgos radiológicos visibles (fracturas, luxaciones, "
+        "edema de partes blandas, etc.).\n\n"
+        "INSTRUCCIONES IMPORTANTES:\n"
+        "- Si la imagen es una radiografía, fíjate en la forma y número de huesos largos, "
+        "presencia de articulaciones características (ej. codo: olécranon, cabeza radial; "
+        "mano: múltiples huesos pequeños, falanges).\n"
+        "- Si ves múltiples huesos cortos alineados en filas, es muy probable que sea una mano o un pie.\n"
+        "- No asumas la zona por el contexto; analiza exclusivamente la imagen.\n\n"
+        "Responde EXCLUSIVAMENTE con un objeto JSON válido:\n"
         "{\n"
-        '  "es_medica": true o false,\n'
-        '  "razon": "Breve justificación",\n'
-        '  "zona_corporal": "nombre de la zona corporal",\n'
-        '  "hallazgos": "descripción breve de hallazgos visibles"\n'
+        '  "es_medica": true/false,\n'
+        '  "razon": "Breve justificación de por qué es o no médica",\n'
+        '  "zona_corporal": "Una de las opciones de la lista anterior",\n'
+        '  "hallazgos": "Descripción concisa de los hallazgos radiológicos observados"\n'
         "}"
     )
 

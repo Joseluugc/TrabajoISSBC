@@ -201,11 +201,17 @@ class VentanaPrincipal(QMainWindow):
         self.btn_fuentes.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_fuentes.setToolTip("Ver fuentes web consultadas")
 
+        self.btn_limpiar = QPushButton("🗑️  Limpiar Todo")
+        self.btn_limpiar.setObjectName("btn_limpiar")
+        self.btn_limpiar.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_limpiar.setToolTip("Reiniciar el formulario a su estado inicial")
+
         layout_acciones.addWidget(self.btn_evaluar, 0, 0)
         layout_acciones.addWidget(self.btn_diagnosticar, 0, 1)
         layout_acciones.addWidget(self.btn_justificacion, 1, 0)
         layout_acciones.addWidget(self.btn_pdfs, 1, 1)
-        layout_acciones.addWidget(self.btn_fuentes, 2, 0, 1, 2)
+        layout_acciones.addWidget(self.btn_fuentes, 2, 0)
+        layout_acciones.addWidget(self.btn_limpiar, 2, 1)
         grupo_acciones.setLayout(layout_acciones)
         layout.addWidget(grupo_acciones)
 
@@ -223,6 +229,21 @@ class VentanaPrincipal(QMainWindow):
     def obtener_modo(self) -> str:
         """Devuelve el modo seleccionado."""
         return "Solo Local" if self.rb_local.isChecked() else "Web + Local"
+
+    def limpiar_formulario(self):
+        """Resetea todos los controles de la UI a su estado inicial."""
+        # Desmarcar todos los checkboxes
+        for cb in self.checkboxes:
+            cb.setChecked(False)
+        # Devolver todos los comboboxes al primer valor
+        for cmb in self.comboboxes.values():
+            cmb.setCurrentIndex(0)
+        # Limpiar imagen
+        self.lbl_radiografia.setText("Ningún archivo seleccionado")
+        self.lbl_preview.clear()
+        self.lbl_preview.setText("Sin imagen")
+        # Restaurar modo predeterminado
+        self.rb_local.setChecked(True)
 
     def mostrar_ruta_radiografia(self, ruta: str):
         """Actualiza la etiqueta con la ruta de la radiografía subida."""
@@ -275,6 +296,7 @@ class VentanaPrincipal(QMainWindow):
         """Deshabilita/habilita los botones de acción durante inferencia."""
         for btn in [
             self.btn_evaluar, self.btn_diagnosticar,
-            self.btn_justificacion, self.btn_pdfs, self.btn_fuentes,
+            self.btn_justificacion, self.btn_pdfs,
+            self.btn_fuentes, self.btn_limpiar,
         ]:
             btn.setDisabled(deshabilitar)

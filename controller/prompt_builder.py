@@ -17,6 +17,7 @@ def construir_prompt(
     texto_pdfs: str,
     contexto_web: str,
     tipo_analisis: str = "completo",
+    descripcion_imagen: str = "",
 ) -> str:
     """
     Construye un prompt estructurado para LLaVa.
@@ -38,7 +39,7 @@ def construir_prompt(
     secciones.append(_seccion_system(ruta_radiografia))
 
     # --- 2. Datos clínicos del paciente ---
-    secciones.append(_seccion_datos_paciente(sintomas, valores, ruta_radiografia))
+    secciones.append(_seccion_datos_paciente(sintomas, valores, ruta_radiografia, descripcion_imagen))
 
     # --- 3. Contexto RAG local (PDFs) ---
     if texto_pdfs:
@@ -84,6 +85,7 @@ def _seccion_datos_paciente(
     sintomas: list[str],
     valores: dict[str, str],
     ruta_radiografia: str | None,
+    descripcion_imagen: str = "",
 ) -> str:
     """Genera la sección con los datos clínicos del paciente."""
     lineas = ["--- DATOS CLÍNICOS DEL PACIENTE ---"]
@@ -97,6 +99,12 @@ def _seccion_datos_paciente(
             f"\nSe adjunta imagen de radiografía: "
             f"{os.path.basename(ruta_radiografia)}"
         )
+        if descripcion_imagen:
+            lineas.append(
+                f"**Informe radiológico preliminar (generado por IA):** {descripcion_imagen}\n"
+                "Utiliza esta descripción como referencia fiable de la zona anatómica y hallazgos visibles. "
+                "No la contradigas a menos que tengas evidencia muy clara en la imagen."
+            )
         lineas.append(
             "Analiza la imagen para detectar hallazgos radiológicos relevantes "
             "(fracturas, luxaciones, edemas óseos, etc.)."

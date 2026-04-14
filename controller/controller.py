@@ -55,6 +55,7 @@ class Controlador:
         self.vista.btn_justificacion.clicked.connect(self._ver_justificacion)
         self.vista.btn_pdfs.clicked.connect(self._gestionar_pdfs)
         self.vista.btn_fuentes.clicked.connect(self._ver_fuentes_web)
+        self.vista.btn_limpiar.clicked.connect(self._limpiar_todo)
 
     # ------------------------------------------------------------------
     # Recoger datos de la Vista → Modelo
@@ -298,6 +299,7 @@ class Controlador:
             texto_pdfs=self.modelo.extraer_texto_pdfs(),
             contexto_web=contexto_web,
             tipo_analisis=self._tipo_analisis_pendiente,
+            descripcion_imagen=self.modelo.descripcion_imagen,
         )
 
         # Crear y conectar el worker
@@ -417,3 +419,24 @@ class Controlador:
     def _ver_fuentes_web(self):
         """Muestra el diálogo de fuentes web consultadas."""
         DialogoFuentesWeb(self.modelo.fuentes_web, parent=self.vista).exec()
+
+    # ------------------------------------------------------------------
+    # Slot: Limpiar formulario
+    # ------------------------------------------------------------------
+    def _limpiar_todo(self):
+        """Resetea la UI y el modelo a su estado inicial."""
+        # Resetear modelo
+        self.modelo.sintomas_seleccionados = []
+        self.modelo.valores_combobox = {}
+        self.modelo.ruta_radiografia = None
+        self.modelo.descripcion_imagen = ""
+        self.modelo.contexto_web = ""
+        self.modelo.fuentes_web = []
+        self.modelo.hipotesis = []
+        self.modelo.diagnostico = ""
+        self.modelo.justificacion = ""
+        self.modelo.recomendaciones = ""
+        self.modelo.confianza = 0.0
+        self.modelo.modo = "Solo Local"
+        # Resetear vista
+        self.vista.limpiar_formulario()
