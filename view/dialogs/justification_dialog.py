@@ -5,8 +5,10 @@ Responsabilidad única: mostrar la justificación detallada
 del diagnóstico emitido por el LLM.
 """
 
+import re
+
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QPushButton, QTextEdit,
+    QDialog, QVBoxLayout, QLabel, QPushButton, QTextBrowser,
 )
 from PyQt6.QtCore import Qt
 
@@ -32,9 +34,16 @@ class DialogoJustificacion(QDialog):
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(titulo)
 
-        texto = QTextEdit()
-        texto.setReadOnly(True)
-        texto.setPlainText(justificacion)
+        texto = QTextBrowser()
+        texto.setOpenExternalLinks(True)
+        # Convertir URLs en enlaces HTML clicables
+        patron_url = re.compile(r'(https?://[^\s<>"\')]+)')
+        justificacion_html = patron_url.sub(
+            r'<a href="\1" style="color: #2B6CB0; '
+            r'text-decoration: underline;">\1</a>',
+            justificacion,
+        )
+        texto.setHtml(f'<p>{justificacion_html}</p>')
         layout.addWidget(texto)
 
         btn_cerrar = QPushButton("Cerrar")

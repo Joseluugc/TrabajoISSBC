@@ -5,9 +5,11 @@ Responsabilidad única: mostrar el diagnóstico definitivo,
 nivel de confianza y recomendaciones de tratamiento.
 """
 
+import re
+
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QPushButton,
-    QGroupBox, QTextEdit,
+    QGroupBox, QTextBrowser,
 )
 from PyQt6.QtCore import Qt
 
@@ -62,9 +64,15 @@ class DialogoDiagnostico(QDialog):
         # Recomendaciones
         grupo_rec = QGroupBox("Recomendaciones")
         l_rec = QVBoxLayout()
-        txt_rec = QTextEdit()
-        txt_rec.setReadOnly(True)
-        txt_rec.setPlainText(recomendaciones)
+        txt_rec = QTextBrowser()
+        txt_rec.setOpenExternalLinks(True)
+        patron_url = re.compile(r'(https?://[^\s<>"\')]+)')
+        recom_html = patron_url.sub(
+            r'<a href="\1" style="color: #2B6CB0; '
+            r'text-decoration: underline;">\1</a>',
+            recomendaciones,
+        )
+        txt_rec.setHtml(f'<p>{recom_html}</p>')
         l_rec.addWidget(txt_rec)
         grupo_rec.setLayout(l_rec)
         layout.addWidget(grupo_rec)

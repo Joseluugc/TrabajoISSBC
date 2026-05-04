@@ -95,9 +95,16 @@ def _seccion_datos_paciente(
         lineas.append(f"{etiqueta}: {valor}")
 
     if ruta_radiografia:
+        nombre_archivo = os.path.basename(ruta_radiografia)
+        nombre_sin_extension = os.path.splitext(nombre_archivo)[0]
+
+        lineas.append(f"\nSe adjunta imagen de radiografía: {nombre_archivo}")
         lineas.append(
-            f"\nSe adjunta imagen de radiografía: "
-            f"{os.path.basename(ruta_radiografia)}"
+            f"**Nombre descriptivo de la imagen:** \"{nombre_sin_extension}\"\n"
+            "IMPORTANTE: El nombre del archivo ha sido asignado por el usuario "
+            "para indicar la zona anatómica o región de estudio. Utiliza esta "
+            "información como contexto clave para orientar tu análisis hacia "
+            "la zona correcta del cuerpo."
         )
         if descripcion_imagen:
             lineas.append(

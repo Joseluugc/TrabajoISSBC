@@ -5,8 +5,10 @@ Responsabilidad única: mostrar el resultado estructurado devuelto
 por LLaVa (hipótesis, diagnóstico, justificación, recomendaciones).
 """
 
+import re
+
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QPushButton, QTextEdit,
+    QDialog, QVBoxLayout, QLabel, QPushButton, QTextBrowser,
 )
 from PyQt6.QtCore import Qt
 
@@ -35,9 +37,9 @@ class DialogoResultadoLLM(QDialog):
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(titulo)
 
-        texto = QTextEdit()
-        texto.setReadOnly(True)
-        texto.setPlainText(self._formatear_resultado(resultado))
+        texto = QTextBrowser()
+        texto.setOpenExternalLinks(True)
+        texto.setHtml(self._formatear_resultado(resultado))
         layout.addWidget(texto)
 
         btn_cerrar = QPushButton("Cerrar")
@@ -46,47 +48,59 @@ class DialogoResultadoLLM(QDialog):
         btn_cerrar.clicked.connect(self.close)
         layout.addWidget(btn_cerrar, alignment=Qt.AlignmentFlag.AlignRight)
 
-    @staticmethod
-    def _formatear_resultado(resultado: dict) -> str:
-        """Formatea el dict de resultado en texto legible."""
-        lineas = []
+    _PATRON_URL = re.compile(r'(https?://[^\s<>"\')]+)')
+
+    @classmethod
+    def _enlazar_urls(cls, texto: str) -> str:
+        """Convierte URLs en texto plano a enlaces HTML clicables."""
+        return cls._PATRON_URL.sub(
+            r'<a href="\1" style="color: #2B6CB0; text-decoration: underline;">\1</a>',
+            texto,
+        )
+
+    @classmethod
+    def _formatear_resultado(cls, resultado: dict) -> str:
+        """Formatea el dict de resultado en HTML legible con enlaces clicables."""
+        secciones = []
+        estilo_titulo = (
+            'style="color: #1A365D; font-weight: bold; '
+            'font-size: 14px; margin-top: 12px;"'
+        )
 
         diag = resultado.get("diagnostico", "")
         if diag:
-            lineas.append("═══ DIAGNÓSTICO ═══")
-            lineas.append(str(diag))
-            lineas.append("")
+            secciones.append(f'<p {estilo_titulo}>═══ DIAGNÓSTICO ═══</p>')
+            secciones.append(f'<p>{cls._enlazar_urls(str(diag))}</p>')
 
         hipotesis = resultado.get("hipotesis", [])
         if hipotesis:
-            lineas.append("═══ HIPÓTESIS ═══")
+            secciones.append(f'<p {estilo_titulo}>═══ HIPÓTESIS ═══</p>')
             if isinstance(hipotesis, list):
+                items = []
                 for i, h in enumerate(hipotesis, 1):
                     if isinstance(h, dict):
                         nombre = h.get("nombre", h.get("hipotesis", str(h)))
                         prob = h.get("probabilidad", h.get("porcentaje", "N/D"))
-                        lineas.append(f"  {i}. {nombre} — {prob}%")
+                        items.append(f'<li>{nombre} — {prob}%</li>')
                     else:
-                        lineas.append(f"  {i}. {h}")
+                        items.append(f'<li>{h}</li>')
+                secciones.append('<ol>' + ''.join(items) + '</ol>')
             else:
-                lineas.append(f"  {hipotesis}")
-            lineas.append("")
+                secciones.append(f'<p>{cls._enlazar_urls(str(hipotesis))}</p>')
 
         justif = resultado.get("justificacion", resultado.get("justificación", ""))
         if justif:
-            lineas.append("═══ JUSTIFICACIÓN CLÍNICA ═══")
-            lineas.append(str(justif))
-            lineas.append("")
+            secciones.append(f'<p {estilo_titulo}>═══ JUSTIFICACIÓN CLÍNICA ═══</p>')
+            secciones.append(f'<p>{cls._enlazar_urls(str(justif))}</p>')
 
         recom = resultado.get("recomendaciones", "")
         if recom:
-            lineas.append("═══ RECOMENDACIONES ═══")
-            lineas.append(str(recom))
-            lineas.append("")
+            secciones.append(f'<p {estilo_titulo}>═══ RECOMENDACIONES ═══</p>')
+            secciones.append(f'<p>{cls._enlazar_urls(str(recom))}</p>')
 
         cruda = resultado.get("respuesta_cruda", "")
         if cruda:
-            lineas.append("═══ RESPUESTA CRUDA DEL MODELO ═══")
-            lineas.append(str(cruda))
+            secciones.append(f'<p {estilo_titulo}>═══ RESPUESTA CRUDA DEL MODELO ═══</p>')
+            secciones.append(f'<p>{cls._enlazar_urls(str(cruda))}</p>')
 
-        return "\n".join(lineas) if lineas else "Sin resultados disponibles."
+        return ''.join(secciones) if secciones else '<p>Sin resultados disponibles.</p>'

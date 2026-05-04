@@ -128,11 +128,58 @@ class VentanaPrincipal(QMainWindow):
         layout.addWidget(grupo_cmb)
 
     def _crear_seccion_radiografia(self, layout):
-        """Crea la sección de carga de radiografía con preview."""
+        """Crea la sección de carga de radiografía con preview e indicaciones."""
         grupo_radio = QGroupBox("🩻  Radiografía / Prueba Complementaria")
         layout_radio = QVBoxLayout()
         layout_radio.setSpacing(10)
 
+        # --- Indicaciones de subida ---
+        indicaciones = QLabel(
+            "💡 <b>Indicaciones para la subida de imagen:</b>"
+            "<ul style='margin-top: 4px; margin-bottom: 4px;'>"
+            "<li>Nombre el archivo con la <b>zona anatómica</b> a estudiar "
+            "(ej: <i>rodilla_derecha.png</i>, <i>muñeca_izquierda.jpg</i>) "
+            "para mejorar la precisión del análisis.</li>"
+            "<li>Utilice imágenes de <b>buena calidad y resolución</b>; "
+            "evite fotos borrosas o con recortes excesivos.</li>"
+            "<li>Formatos admitidos: <b>PNG, JPG, JPEG, BMP, WebP</b>.</li>"
+            "<li>Suba una <b>única prueba</b> por análisis para obtener "
+            "resultados más fiables.</li>"
+            "</ul>"
+        )
+        indicaciones.setObjectName("lbl_indicaciones_subida")
+        indicaciones.setWordWrap(True)
+        indicaciones.setTextFormat(Qt.TextFormat.RichText)
+        indicaciones.setStyleSheet(
+            "background-color: #EBF4FF;"
+            "border: 1px solid #BEE3F8;"
+            "border-radius: 8px;"
+            "padding: 10px 14px;"
+            "color: #2D3748;"
+            "font-size: 12px;"
+        )
+        layout_radio.addWidget(indicaciones)
+
+        # --- Aviso de limitaciones IA ---
+        aviso_ia = QLabel(
+            "⚠️  <b>Aviso:</b> Los diagnósticos generados por IA son "
+            "orientativos y pueden contener errores. No sustituyen la "
+            "valoración de un profesional médico cualificado."
+        )
+        aviso_ia.setObjectName("lbl_aviso_ia")
+        aviso_ia.setWordWrap(True)
+        aviso_ia.setTextFormat(Qt.TextFormat.RichText)
+        aviso_ia.setStyleSheet(
+            "background-color: #FFFBEB;"
+            "border: 1px solid #F6E05E;"
+            "border-radius: 8px;"
+            "padding: 8px 14px;"
+            "color: #744210;"
+            "font-size: 11px;"
+        )
+        layout_radio.addWidget(aviso_ia)
+
+        # --- Botón de subida y ruta ---
         fila_radio = QHBoxLayout()
         self.btn_subir_radiografia = QPushButton("📂  Subir Radiografía / Prueba")
         self.btn_subir_radiografia.setObjectName("btn_subir")
@@ -143,6 +190,7 @@ class VentanaPrincipal(QMainWindow):
         fila_radio.addWidget(self.lbl_radiografia, 1)
         layout_radio.addLayout(fila_radio)
 
+        # --- Preview de la imagen ---
         self.lbl_preview = QLabel("Sin imagen")
         self.lbl_preview.setObjectName("lbl_preview")
         self.lbl_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
