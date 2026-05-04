@@ -57,6 +57,10 @@ class Modelo:
     def ruta_radiografia(self) -> str | None:
         return self._pdf_manager.ruta_radiografia
 
+    @ruta_radiografia.setter
+    def ruta_radiografia(self, valor: str | None) -> None:
+        self._pdf_manager.ruta_radiografia = valor
+
     def establecer_radiografia(self, ruta: str) -> None:
         self._pdf_manager.establecer_radiografia(ruta)
 
